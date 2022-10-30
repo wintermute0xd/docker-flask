@@ -1,0 +1,40 @@
+version: '3'
+services:
+  postgres:
+      build:
+        context: ./postgres
+    env_file:
+      - db.env
+    environment:
+      - POSTGRES_PASSWORD='pstgrP@ss'
+  nginx:
+    depends_on:
+      - postgres
+      - flaskapp
+    restart: always
+    image: nginx:latest
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d/
+    ports:
+      - '80:80'
+  flaskapp:
+    image: python:latest
+    # environment:
+    #   - DB_HOST=postgres
+    #   - DB_PORT=5432
+    #   - DB_USER=flasker
+    #   - DB_PASS=123
+    env_file:
+      - db.env
+    working_dir: /usr/flaskapp
+    volumes:
+      - ./flaskapp/appvlm:/usr/flaskapp
+    command:
+      - /bin/bash
+      - -c
+      - |
+        pip install --no-cache-dir -r requirements.txt
+        python manage.py
+        gunicorn -w 2 -b 0.0.0.0 app:app
+    ports:
+      - '8000:8000'
